@@ -29,11 +29,35 @@ func main() {
 
 	_, err = conn.Write([]byte(strconv.Itoa(clientPort)))
 	checkError(err)
+	var newConn net.Conn
+	for {
+		data := make([]byte, 17)
+		len, addr, err := readConn.ReadFromUDP(data)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
 
+		if addr.IP.String() != serverIP {
+			fmt.Println("IP is not server IP")
+			continue
+		}
+		newConn, err = DialClient(addr, string(data[:len]))
+		fmt.Println("server address: ", newConn.RemoteAddr())
+		break
+	}
+
+	sequenceNumber := 0
+	sendData := "ACK" + strconv.Itoa(sequenceNumber)
+	newConn.Write([]byte(sendData))
+	fmt.Println(sendData)
+	fmt.Println(readConn.LocalAddr())
+	sequenceNumber = 1
 	var content []byte
 	for {
-		data := make([]byte, 16)
+		data := make([]byte, 17)
 		len, addr, err := readConn.ReadFromUDP(data)
+		fmt.Println("receive data ", data[:len])
 		if err != nil {
 			fmt.Println(err)
 			continue
@@ -42,8 +66,16 @@ func main() {
 		if addr.IP.String() != serverIP {
 			continue
 		}
-		content = append(content, data[:len]...)
-		if len < 16 {
+		if data[0] != byte(sequenceNumber+'0') {
+			continue
+		}
+		sendData = "ACK" + strconv.Itoa(sequenceNumber)
+		newConn.Write([]byte(sendData))
+		fmt.Println(sendData)
+		sequenceNumber = 1 - sequenceNumber
+
+		content = append(content, data[1:len]...)
+		if len < 17 {
 			break
 		}
 	}
@@ -69,4 +101,22 @@ func checkError(err error) {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+}
+func DialClient(addr *net.UDPAddr, data string) (conn net.Conn, err error) {
+	port, err := strconv.ParseUint(data, 10, 17)
+	if err != nil {
+		fmt.Println("Parse unsigned int error: " + err.Error())
+		return
+	}
+	if port < 1024 {
+		fmt.Println(strconv.Itoa(addr.Port) + ": the port should be 1024~65535")
+		return
+	}
+	clientAddr := addr.IP.String() + ":" + strconv.Itoa(int(port))
+	// error?
+	conn, err = net.Dial("udp", clientAddr)
+	if err != nil {
+		fmt.Println("The connection with " + addr.IP.String() + " has error: " + err.Error())
+	}
+	return
 }
