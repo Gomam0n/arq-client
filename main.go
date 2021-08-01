@@ -69,7 +69,8 @@ func main() {
 			continue
 		}
 		if data[0] != byte(sequenceNumber+'0') {
-			fmt.Println("sequence number not correct, ignore the packet")
+			fmt.Println("sequence number not correct, ignore the packet and resend ACK")
+			newConn.Write([]byte(sendData))
 			continue
 		}
 		fmt.Println("receive data ", string(data[1:len]))
