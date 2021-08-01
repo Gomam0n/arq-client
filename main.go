@@ -7,8 +7,10 @@ import (
 	"strconv"
 )
 
-var IP = "127.0.0.1"
-var serverIP = "127.0.0.1"
+var IP = "0.0.0.0"
+
+// change this IP
+var serverIP = "10.10.80.2"
 var serverPort = 8888
 var clientPort = 9999
 
