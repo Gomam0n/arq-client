@@ -57,7 +57,7 @@ func main() {
 	for {
 		data := make([]byte, 17)
 		len, addr, err := readConn.ReadFromUDP(data)
-		fmt.Println("receive data ", data[:len])
+
 		if err != nil {
 			fmt.Println(err)
 			continue
@@ -67,8 +67,10 @@ func main() {
 			continue
 		}
 		if data[0] != byte(sequenceNumber+'0') {
+			fmt.Println("sequence number not correct, ignore the packet")
 			continue
 		}
+		fmt.Println("receive data ", string(data[1:len]))
 		sendData = "ACK" + strconv.Itoa(sequenceNumber)
 		newConn.Write([]byte(sendData))
 		fmt.Println(sendData)
@@ -80,7 +82,7 @@ func main() {
 		}
 	}
 	WriteFile("receive.txt", content)
-
+	fmt.Println("file stored")
 }
 func WriteFile(name string, content []byte) {
 	file, err := os.Create(name)
